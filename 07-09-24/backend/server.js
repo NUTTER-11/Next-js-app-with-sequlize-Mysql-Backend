@@ -3,23 +3,37 @@ const cors = require('cors');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const PORT = 3001;
-const User = require('./models/users'); // Ensure this path is correct
-const sequelize = require('./config/config'); // Ensure this path is correct
+const User = require('./models/users'); 
+const sequelize = require('./config/config'); 
 
-const JWT_SECRET = 'helloji';
-
+const JWT_SECRET = 'helloji'; 
 const server = express();
 
 // Middleware
 server.use(express.urlencoded({ extended: false }));
 server.use(express.json());
 server.use(cors({
-  origin: 'http://localhost:3000', // Ensure this matches your frontend URL
+  origin: 'http://localhost:3000', 
   methods: ['GET', 'POST'],
-  allowedHeaders: ['Content-Type'],
+  allowedHeaders: ['Content-Type', 'Authorization'], 
 }));
 
-// Routes
+
+const authenticateToken = (req, res, next) => {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+  console.log(token)
+
+  if (token == null) return res.sendStatus(401); 
+
+  jwt.verify(token, JWT_SECRET, (err, user) => {
+    if (err) return res.sendStatus(403);
+    req.user = user;
+    next();
+  });
+};
+
+
 server.post('/create/new-profile', async (req, res) => {
   try {
     const { first_name, email, phone, password, re_enter_password } = req.body;
@@ -63,7 +77,8 @@ server.post('/login-as-existing-user/login', async (req, res) => {
   }
 });
 
-server.get('/search/get-all-users', async (req, res) => {
+
+server.get('/search/get-all-users', authenticateToken, async (req, res) => {
   try {
     const { first_name } = req.query;
 
@@ -89,8 +104,6 @@ server.get('/search/get-all-users', async (req, res) => {
 });
 
 
-
-// Synchronize with the database and start the server
 sequelize.sync()
   .then(() => {
     server.listen(PORT, () => {

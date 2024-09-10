@@ -5,6 +5,7 @@ import React, { ChangeEvent, useState } from 'react';
 interface User {
   first_name: string;
   email: string;
+
 }
 
 const Search = () => {
@@ -17,9 +18,14 @@ const Search = () => {
   };
 
   const handleKeyDown = async (event: React.KeyboardEvent<HTMLInputElement>) => {
-    if (event.key === 'Enter') {
+    if (event.key === 'Enter' && value.trim() !== 'Enter search...') {
       try {
-        const response = await fetch(`http://localhost:3001/search/get-all-users?first_name=${encodeURIComponent(value)}`);
+        
+        const response = await fetch(`http://localhost:3001/search/get-all-users?first_name=${encodeURIComponent(value)}`, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        });
 
         if (!response.ok) {
           throw new Error('User not found');
